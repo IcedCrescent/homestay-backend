@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "pnpx prisma generate",
-    "db:migrate": "pnpx prisma migrate"
+    "db:migrate": "pnpx prisma migrate",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/core": "^0.38.0",
