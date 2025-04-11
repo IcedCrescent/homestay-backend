@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  ACCOUNTANT
+  RECEPTIONIST
+  WAITER
+  CUSTOMER
+  STOCKER
+}
+
+enum TransactionReason {
+  SALARY
+  FINE
+  ROOM
+  SERVICE
+  OTHER
+}
+
+enum TransactionType {
+  REVENUE
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+enum Shift {
+  MORNING
+  AFTERNOON
+  NIGHT
+  EVENING
+}
+
+enum ServiceType {
+  UTILITY
+  PRODUCT
+}
+
+enum ServiceAmountUnit {
+  DURATION
+  PRICE
+  USAGE
+}
+
+model User {
+  id           Int           @id @unique @default(autoincrement())
+  name         String
+  password     String
+  email        String        @unique
+  image        String?
+  createdAt    DateTime      @default(now())
+  salary       Float?
+  role         Role
+  phone        String?
+  shift        Shift?
+  isMale       Boolean
+  remainDayOff Int?          @default(12)
+  spent        Float?        @default(0)
+  transactions Transaction[]
+
+  Booking Booking[]
+
+  transactionsConfirm Transaction[] @relation(name: "TransactionConfirmUser")
+
+  transactionsUser Transaction[] @relation(name: "TransactionUser")
+
+  Attendance Attendance[]
+}
+
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  shift       Shift
+  checkInAt   DateTime
+  isConfirmed Boolean  @default(false)
+}
+
+model RoomClass {
+  id             Int       @id @default(autoincrement())
+  name           String    @unique
+  description    String?
+  price          Float
+  images         String?
+  numOfBreakfast Int
+  numBeds        Int
+  area           Float
+  view           String
+  capacity       String
+  vouchers       Voucher[]
+  rooms          Room[]
+}
+
+model Room {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  description   String?
+  status        Boolean
+  room_class_id Int
+  roomClass     RoomClass @relation(fields: [room_class_id], references: [id], onDelete: Cascade)
+
+  RoomBooking RoomBooking[]
+}
+
+model Voucher {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique
+  discount      Float
+  from          DateTime
+  to            DateTime
+  minSpend      Float
+  room_class_id Int
+  roomClass     RoomClass @relation(fields: [room_class_id], references: [id], onDelete: Cascade)
+}
+
+model Asset {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  image       String?
+  amount      Int
+  createdAt   DateTime @default(now())
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  text      String
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+}
+
+model Booking {
+  id             Int          @id @default(autoincrement())
+  status         Int
+  deposit        Float
+  from           DateTime
+  to             DateTime
+  voucher_code   String?
+  total_payment  Float?
+  transaction_id Int?
+  transaction    Transaction? @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  user_id        Int
+  user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  roomBookings RoomBooking[]
+  userBookings UserBooking[]
+}
+
+model UserBooking {
+  id                   Int     @id @default(autoincrement())
+  fullname             String
+  phone_number         String
+  identity_card_number String
+  booking_id           Int
+  booking              Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+}
+
+model RoomBooking {
+  id           Int     @id @default(autoincrement())
+  booking_id   Int
+  booking      Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  room_id      Int
+  room         Room    @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  booked_price Float
+}
+
+model Transaction {
+  id          Int               @id @default(autoincrement())
+  amount      Float
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  user_id     Int
+  description String?
+  reason      TransactionReason
+  bill_image  String?
+  confirm_by  Int?
+  createdAt   DateTime          @default(now())
+
+  user        User      @relation(name: "TransactionUser", fields: [user_id], references: [id], onDelete: Cascade)
+  confirmUser User?     @relation(name: "TransactionConfirmUser", fields: [confirm_by], references: [id], onDelete: SetNull)
+  bookings    Booking[]
+
+  User User[]
+}
+
+model BookingService {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  type        ServiceType       @default(UTILITY)
+  amount      Int
+  amount_unit ServiceAmountUnit @default(DURATION)
+  price       Float
+  description String?
+}
+
+// generator erd {
+//   provider = "prisma-erd-generator"
+// }
